@@ -11,20 +11,20 @@ from pathlib import Path
 def check_file_exists(filepath, description):
     """Check if a file exists"""
     if os.path.exists(filepath):
-        print(f"✅ {description}: {filepath}")
+        print(f"SUCCESS: {description}: {filepath}")
         return True
     else:
-        print(f"❌ {description}: {filepath} - NOT FOUND")
+        print(f"ERROR: {description}: {filepath} - NOT FOUND")
         return False
 
 def check_python_import(module_name, description):
     """Check if a Python module can be imported"""
     try:
         __import__(module_name)
-        print(f"✅ {description}: {module_name}")
+        print(f"SUCCESS: {description}: {module_name}")
         return True
     except ImportError as e:
-        print(f"❌ {description}: {module_name} - IMPORT ERROR: {e}")
+        print(f"ERROR: {description}: {module_name} - IMPORT ERROR: {e}")
         return False
 
 def check_env_var(var_name, required=True):
@@ -32,10 +32,10 @@ def check_env_var(var_name, required=True):
     value = os.getenv(var_name)
     if value:
         masked_value = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
-        print(f"✅ Environment: {var_name} = {masked_value}")
+        print(f"SUCCESS Environment: {var_name} = {masked_value}")
         return True
     else:
-        status = "❌ MISSING" if required else "⚠️  NOT SET"
+        status = "ERROR: MISSING" if required else "WARNING: NOT SET"
         print(f"{status} Environment: {var_name}")
         return not required
 
@@ -62,7 +62,7 @@ def main():
         ("backend/summary_bot.py", "AI summary bot"),
     ]
     
-    print("\n📁 Checking Core Files:")
+    print("\nChecking Core Files:")
     for filepath, description in core_files:
         if check_file_exists(filepath, description):
             checks_passed += 1
@@ -76,7 +76,7 @@ def main():
         ("deploy-aws.sh", "AWS deployment script"),
     ]
     
-    print("\n☁️  Checking AWS Deployment Files:")
+    print("\nChecking AWS Deployment Files:")
     for filepath, description in aws_files:
         if check_file_exists(filepath, description):
             checks_passed += 1
@@ -93,14 +93,14 @@ def main():
         ("boto3", "AWS SDK"),
     ]
     
-    print("\n🐍 Checking Python Dependencies:")
+    print("\nChecking Python Dependencies:")
     for module, description in required_modules:
         if check_python_import(module, description):
             checks_passed += 1
         total_checks += 1
     
     # Check environment variables
-    print("\n🔧 Checking Environment Variables:")
+    print("\nChecking Environment Variables:")
     env_vars = [
         ("GITHUB_TOKEN", True),
         ("DATABASE_URL", True),
@@ -121,13 +121,13 @@ def main():
     print(f"Verification Results: {checks_passed}/{total_checks} checks passed")
     
     if checks_passed == total_checks:
-        print("🎉 All checks passed! Ready for deployment.")
+        print("SUCCESS: All checks passed! Ready for deployment.")
         return 0
     elif checks_passed >= total_checks * 0.8:  # 80% pass rate
-        print("⚠️  Most checks passed. Review warnings above.")
+        print("WARNING: Most checks passed. Review warnings above.")
         return 0
     else:
-        print("❌ Several checks failed. Please resolve issues before deployment.")
+        print("ERROR: Several checks failed. Please resolve issues before deployment.")
         return 1
 
 if __name__ == "__main__":

@@ -885,7 +885,7 @@ class EnhancedMLAnalyzer:
             
             if percentage >= 85:
                 insights["performance_insights"].append(
-                    f"🏆 Excellent performance with {grade} grade ({percentage}%)")
+                    f"Excellent performance with {grade} grade ({percentage}%)")
             elif percentage >= 70:
                 insights["performance_insights"].append(
                     f"Good performance with {grade} grade ({percentage}%) - room for improvement")
@@ -901,7 +901,7 @@ class EnhancedMLAnalyzer:
             failure_rate = dora.get("change_failure_rate", {}).get("percentage", 0)
             
             if lead_time > 168:  # > 1 week
-                insights["alerts"].append("🐌 Lead time is longer than industry average")
+                insights["alerts"].append("Lead time is longer than industry average")
                 insights["recommendations"].append("Consider breaking down work into smaller, reviewable chunks")
                 
             if deploy_freq < 1:
@@ -909,7 +909,7 @@ class EnhancedMLAnalyzer:
                 insights["recommendations"].append("Increase deployment cadence with smaller, more frequent releases")
                 
             if failure_rate > 15:
-                insights["alerts"].append("🔧 High change failure rate")
+                insights["alerts"].append("High change failure rate")
                 insights["recommendations"].append("Invest in automated testing and code review processes")
                 
         # Trend analysis if historical data available
@@ -924,7 +924,7 @@ class EnhancedMLAnalyzer:
             # Check for anomalies
             anomalies = self.detect_anomalies(historical_data, "dora.deployment_frequency.per_week")
             if anomalies.get("anomaly_score", 0) > 20:
-                insights["alerts"].append("🚨 Unusual patterns detected in deployment frequency")
+                insights["alerts"].append("Unusual patterns detected in deployment frequency")
                 
         # Code quality insights
         code_quality = metrics.get("code_quality", {})

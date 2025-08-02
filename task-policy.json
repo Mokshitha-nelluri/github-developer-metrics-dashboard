@@ -7,7 +7,7 @@
         "secretsmanager:GetSecretValue"
       ],
       "Resource": [
-        "arn:aws:secretsmanager:us-east-1:759087331108:secret:github-metrics/*"
+        "arn:aws:secretsmanager:*:*:secret:github-metrics/*"
       ]
     },
     {

@@ -276,12 +276,12 @@ Return JSON with exactly these keys (max 2 sentences each):
         if deploy_freq > self.DEPLOY_FREQ_EXCELLENT:
             insights['performance_insights'].append("Exceptional deployment frequency (>10/week)")
         elif deploy_freq < self.DEPLOY_FREQ_LOW:
-            insights['alerts'].append("📈 Low deployment frequency - consider smaller batches")
+            insights['alerts'].append("Lead time is low (< 2 hours) - consider increasing deployment frequency")
             
         if failure_rate < self.FAILURE_RATE_ELITE:
             insights['performance_insights'].append("Elite change success rate (<5% failures)")
         elif failure_rate > self.FAILURE_RATE_ALERT:
-            insights['alerts'].append("🔧 High failure rate (>15%) - improve testing/review processes")
+            insights['alerts'].append("High failure rate (>15%) - improve testing/review processes")
             
         # Code quality insights
         code_quality = current_metrics.get('code_quality', {})
@@ -289,11 +289,11 @@ Return JSON with exactly these keys (max 2 sentences each):
         large_prs_pct = code_quality.get('large_prs_percentage', 0)
         
         if review_coverage < 70:
-            insights['alerts'].append("📝 Low code review coverage (<70%)")
+            insights['alerts'].append("Low code review coverage (<70%)")
             insights['recommendations'].append("Increase code review coverage to improve quality")
             
         if large_prs_pct > 25:
-            insights['alerts'].append("📦 High percentage of large PRs (>25%)")
+            insights['alerts'].append("High percentage of large PRs (>25%)")
             insights['recommendations'].append("Break down large PRs for easier reviews")
             
         # Work-life balance
@@ -302,11 +302,11 @@ Return JSON with exactly these keys (max 2 sentences each):
         weekend_work = productivity.get('weekend_work_percentage', 0)
         
         if wlb_score < self.WLB_ALERT:
-            insights['alerts'].append("⚖️ Poor work-life balance detected")
+            insights['alerts'].append("Poor work-life balance detected")
             insights['recommendations'].append("Reduce weekend/late-night work to prevent burnout")
             
         if weekend_work > 20:
-            insights['alerts'].append("🌅 Excessive weekend work (>20%)")
+            insights['alerts'].append("Excessive weekend work (>20%)")
             
         # Performance grade insights
         perf_grade = current_metrics.get('performance_grade', {})
@@ -384,27 +384,27 @@ Return JSON with exactly these keys (max 2 sentences each):
                 older_lt = sum(lead_times[:2]) / 2
                 
                 if recent_lt > older_lt * 1.2:
-                    insights['trend_insights'].append("📈 Lead time is increasing - investigate bottlenecks")
+                    insights['trend_insights'].append("Lead time is increasing - investigate bottlenecks")
                 elif recent_lt < older_lt * 0.8:
-                    insights['trend_insights'].append("📉 Lead time is improving - great progress!")
+                    insights['trend_insights'].append("Lead time is improving - great progress!")
                     
             if len(deploy_freqs) >= 3:
                 recent_df = sum(deploy_freqs[-2:]) / 2
                 older_df = sum(deploy_freqs[:2]) / 2
                 
                 if recent_df > older_df * 1.2:
-                    insights['trend_insights'].append("🚀 Deployment frequency is increasing")
+                    insights['trend_insights'].append("Deployment frequency is increasing")
                 elif recent_df < older_df * 0.8:
-                    insights['trend_insights'].append("📉 Deployment frequency is declining")
+                    insights['trend_insights'].append("Deployment frequency is declining")
                     
             if len(failure_rates) >= 3:
                 recent_fr = sum(failure_rates[-2:]) / 2
                 older_fr = sum(failure_rates[:2]) / 2
                 
                 if recent_fr > older_fr * 1.5:
-                    insights['trend_insights'].append("⚠️ Failure rate is increasing - review quality processes")
+                    insights['trend_insights'].append("Failure rate is increasing - review quality processes")
                 elif recent_fr < older_fr * 0.7:
-                    insights['trend_insights'].append("✅ Failure rate is improving")
+                    insights['trend_insights'].append("Failure rate is improving")
                     
         except Exception as e:
             logger.debug(f"Trend analysis error: {e}")

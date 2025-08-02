@@ -1,7 +1,7 @@
 # AWS Secrets Manager Setup Script for Windows PowerShell
 # This script creates all the required secrets for the GitHub Metrics Dashboard
 
-Write-Host "🔐 Setting up AWS Secrets Manager secrets" -ForegroundColor Blue
+Write-Host "Setting up AWS Secrets Manager secrets" -ForegroundColor Blue
 Write-Host "==========================================" -ForegroundColor Blue
 
 # Load environment variables from .env file
@@ -13,9 +13,9 @@ if (Test-Path ".env") {
             [Environment]::SetEnvironmentVariable($name, $value, "Process")
         }
     }
-    Write-Host "✅ Loaded environment variables from .env" -ForegroundColor Green
+    Write-Host "SUCCESS: Loaded environment variables from .env" -ForegroundColor Green
 } else {
-    Write-Host "❌ .env file not found" -ForegroundColor Red
+    Write-Host "ERROR: .env file not found" -ForegroundColor Red
     exit 1
 }
 
@@ -42,7 +42,7 @@ function Create-Secret {
         aws secretsmanager create-secret --name $SecretName --secret-string $SecretValue --region $AWS_REGION --description $Description --output none
     }
     
-    Write-Host "✅ Secret $SecretName configured" -ForegroundColor Green
+    Write-Host "SUCCESS: Secret $SecretName configured" -ForegroundColor Green
 }
 
 # Create all required secrets
@@ -54,7 +54,7 @@ Create-Secret "github-metrics/github-client-secret" $env:GITHUB_CLIENT_SECRET "G
 Create-Secret "github-metrics/gemini-api-key" $env:GEMINI_API_KEY "Google Gemini API Key for AI analysis"
 Create-Secret "github-metrics/database-url" $env:DATABASE_URL "PostgreSQL database connection URL"
 
-Write-Host "🎉 All secrets configured successfully!" -ForegroundColor Green
+Write-Host "SUCCESS: All secrets configured successfully!" -ForegroundColor Green
 Write-Host "Next steps:" -ForegroundColor Blue
 Write-Host "1. Create ECR repository: aws ecr create-repository --repository-name github-metrics --region $AWS_REGION"
 Write-Host "2. Build and push Docker image"

@@ -539,7 +539,7 @@ class EnhancedMetricsCalculator:
         lead_time_hours = metrics.get("dora", {}).get("lead_time", {}).get("total_lead_time_hours", 0)
         if lead_time_hours <= self.benchmarks["elite"]["lead_time_hours"]:
             dora_score += 10
-            explanations.append("🏆 Elite lead time performance")
+            explanations.append("Elite lead time performance")
         elif lead_time_hours <= self.benchmarks["high"]["lead_time_hours"]:
             dora_score += 8
             explanations.append("High-performing lead time")
@@ -578,7 +578,7 @@ class EnhancedMetricsCalculator:
             explanations.append("Acceptable change quality")
         else:
             dora_score += 3
-            explanations.append("🔧 Focus on change quality improvement")
+            explanations.append("Focus on change quality improvement")
         
         # MTTR (10 points)
         mttr_hours = metrics.get("dora", {}).get("mttr", {}).get("mttr_hours", 0)
@@ -587,13 +587,13 @@ class EnhancedMetricsCalculator:
             explanations.append("Elite recovery time")
         elif mttr_hours <= self.benchmarks["high"]["mttr_hours"]:
             dora_score += 8
-            explanations.append("🔧 Fast recovery capability")
+            explanations.append("Fast recovery capability")
         elif mttr_hours <= self.benchmarks["medium"]["mttr_hours"]:
             dora_score += 6
-            explanations.append("⏰ Reasonable recovery time")
+            explanations.append("Reasonable recovery time")
         else:
             dora_score += 3
-            explanations.append("🚨 Improve incident response time")
+            explanations.append("Improve incident response time")
         
         scores["dora"] = dora_score
         max_scores["dora"] = dora_max
@@ -616,10 +616,10 @@ class EnhancedMetricsCalculator:
         large_prs_pct = metrics.get("code_quality", {}).get("large_prs_percentage", 0)
         if large_prs_pct <= 10:
             quality_score += 8
-            explanations.append("📦 Well-sized pull requests")
+            explanations.append("Well-sized pull requests")
         elif large_prs_pct <= 25:
             quality_score += 6
-            explanations.append("📏 Consider smaller PRs")
+            explanations.append("Consider smaller PRs")
         else:
             quality_score += 3
             explanations.append("Break down large pull requests")
@@ -630,7 +630,7 @@ class EnhancedMetricsCalculator:
             explanations.append("Focused commits")
         else:
             quality_score += 4
-            explanations.append("📂 Consider more focused commits")
+            explanations.append("Consider more focused commits")
         
         scores["code_quality"] = quality_score
         max_scores["code_quality"] = quality_max
@@ -645,15 +645,15 @@ class EnhancedMetricsCalculator:
             explanations.append("Excellent work-life balance")
         elif work_life_balance >= 60:
             productivity_score += 8
-            explanations.append("🏠 Good work-life balance")
+            explanations.append("Good work-life balance")
         else:
             productivity_score += 5
-            explanations.append("🌅 Consider improving work-life balance")
+            explanations.append("Consider improving work-life balance")
         
         commit_streak = metrics.get("productivity_patterns", {}).get("max_commit_streak", 0)
         if commit_streak >= 7:
             productivity_score += 10
-            explanations.append("🔥 Great consistency streak")
+            explanations.append("Great consistency streak")
         elif commit_streak >= 3:
             productivity_score += 7
             explanations.append("Good consistency")
@@ -671,13 +671,13 @@ class EnhancedMetricsCalculator:
         unique_reviewers = metrics.get("collaboration", {}).get("unique_reviewers", 0)
         if unique_reviewers >= 5:
             collaboration_score += 8
-            explanations.append("🤝 Strong team collaboration")
+            explanations.append("Strong team collaboration")
         elif unique_reviewers >= 2:
             collaboration_score += 6
-            explanations.append("👥 Good team interaction")
+            explanations.append("Good team interaction")
         else:
             collaboration_score += 3
-            explanations.append("🌐 Expand collaboration network")
+            explanations.append("Expand collaboration network")
         
         review_response_time = metrics.get("collaboration", {}).get("avg_review_response_time_hours", 0)
         if review_response_time <= 24:
@@ -685,10 +685,10 @@ class EnhancedMetricsCalculator:
             explanations.append("Fast review responses")
         elif review_response_time <= 72:
             collaboration_score += 5
-            explanations.append("⏰ Reasonable review timing")
+            explanations.append("Reasonable review timing")
         else:
             collaboration_score += 2
-            explanations.append("🕐 Improve review response time")
+            explanations.append("Improve review response time")
         
         scores["collaboration"] = collaboration_score
         max_scores["collaboration"] = collaboration_max
@@ -775,7 +775,7 @@ class EnhancedMetricsCalculator:
                 elif category == "productivity":
                     strengths.append("Strong productivity patterns - consistent contributions with good work-life balance")
                 elif category == "collaboration":
-                    strengths.append("🤝 Exceptional team collaboration - active engagement with multiple reviewers")
+                    strengths.append("Exceptional team collaboration - active engagement with multiple reviewers")
         
         # If no major strengths, identify the best performing area
         if not strengths and scores:
@@ -787,7 +787,7 @@ class EnhancedMetricsCalculator:
             elif best_category == "productivity":
                 strengths.append("Productivity patterns show consistent development habits")
             elif best_category == "collaboration":
-                strengths.append("👥 Collaboration metrics indicate good team interaction")
+                strengths.append("Collaboration metrics indicate good team interaction")
         
         return strengths
     

@@ -61,23 +61,23 @@
         
         <div style="margin: 20px 0;">
             <button class="nuclear-btn" onclick="nuclearReset()">
-                🗑️ NUCLEAR RESET - Clear Everything
+                NUCLEAR RESET - Clear Everything
             </button>
-            <button class="test-btn" onclick="checkStatus()">🔍 Check Current Status</button>
-            <button class="test-btn" onclick="testAuth()">🔐 Test Auth Page</button>
+            <button class="test-btn" onclick="checkStatus()">Check Current Status</button>
+            <button class="test-btn" onclick="testAuth()">Test Auth Page</button>
         </div>
         
-        <h3>📊 Current Session Status</h3>
+        <h3>Current Session Status</h3>
         <pre id="session-status">Click "Check Current Status" to see...</pre>
         
-        <h3>📱 Storage Contents</h3>
+        <h3>Storage Contents</h3>
         <pre id="storage-contents">Click "Check Current Status" to see...</pre>
         
-        <h3>🔗 Quick Links</h3>
+        <h3>Quick Links</h3>
         <p>
-            <a href="./auth_enhanced.html" target="_blank">🚀 Enhanced Auth Page</a> |
-            <a href="./session_debug.html" target="_blank">🐛 Debug Tool</a> |
-            <a href="http://localhost:8501" target="_blank">📊 Dashboard</a>
+            <a href="./auth_enhanced.html" target="_blank">Enhanced Auth Page</a> |
+            <a href="./session_debug.html" target="_blank">Debug Tool</a> |
+            <a href="http://localhost:8501" target="_blank">Dashboard</a>
         </p>
     </div>
 
@@ -133,13 +133,13 @@
                     sessionStorage.removeItem(key);
                 });
                 
-                showStatus('✅ Nuclear reset complete! All sessions cleared.', 'success');
+                showStatus('SUCCESS: Nuclear reset complete! All sessions cleared.', 'success');
                 
                 // Auto-check status after reset
                 setTimeout(checkStatus, 1000);
                 
             } catch (error) {
-                showStatus(`❌ Reset failed: ${error.message}`, 'error');
+                showStatus(`ERROR: Reset failed: ${error.message}`, 'error');
             }
         }
         
@@ -157,15 +157,15 @@
                 if (error) {
                     statusDiv.textContent = `Error: ${error.message}`;
                 } else if (session) {
-                    statusDiv.textContent = `🔓 ACTIVE SESSION FOUND!
+                    statusDiv.textContent = `ACTIVE SESSION FOUND!
 User: ${session.user.email}
 Created: ${session.created_at}
 Expires: ${new Date(session.expires_at * 1000).toLocaleString()}
 Token: ${session.access_token.substring(0, 30)}...
 
-❌ This means the reset didn't work completely.`;
+ERROR: This means the reset didn't work completely.`;
                 } else {
-                    statusDiv.textContent = `✅ NO SESSION FOUND
+                    statusDiv.textContent = `SUCCESS: NO SESSION FOUND
 This is good! No active sessions detected.`;
                 }
                 
@@ -186,7 +186,7 @@ This is good! No active sessions detected.`;
                 
                 storageContent += `\\n=== Cookies ===\\n${document.cookie || 'No cookies'}`;
                 
-                storageDiv.textContent = storageContent || 'All storage is empty ✅';
+                storageDiv.textContent = storageContent || 'All storage is empty SUCCESS';
                 
             } catch (error) {
                 document.getElementById('session-status').textContent = `Error checking status: ${error.message}`;

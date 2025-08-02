@@ -12,15 +12,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}🔐 Setting up AWS Secrets Manager secrets${NC}"
+echo -e "${BLUE}Setting up AWS Secrets Manager secrets${NC}"
 echo -e "${BLUE}===========================================${NC}"
 
 # Load environment variables from .env file
 if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
-    echo -e "${GREEN}✅ Loaded environment variables from .env${NC}"
+    echo -e "${GREEN}SUCCESS: Loaded environment variables from .env${NC}"
 else
-    echo -e "${RED}❌ .env file not found${NC}"
+    echo -e "${RED}ERROR: .env file not found${NC}"
     exit 1
 fi
 
@@ -52,7 +52,7 @@ create_secret() {
             --description "$description" >/dev/null
     fi
     
-    echo -e "${GREEN}✅ Secret ${secret_name} configured${NC}"
+    echo -e "${GREEN}SUCCESS: Secret ${secret_name} configured${NC}"
 }
 
 # Create all required secrets
@@ -64,7 +64,7 @@ create_secret "github-metrics/github-client-secret" "$GITHUB_CLIENT_SECRET" "Git
 create_secret "github-metrics/gemini-api-key" "$GEMINI_API_KEY" "Google Gemini API Key for AI analysis"
 create_secret "github-metrics/database-url" "$DATABASE_URL" "PostgreSQL database connection URL"
 
-echo -e "${GREEN}🎉 All secrets configured successfully!${NC}"
+echo -e "${GREEN}SUCCESS: All secrets configured successfully!${NC}"
 echo -e "${BLUE}Next steps:${NC}"
 echo -e "1. Create ECR repository: aws ecr create-repository --repository-name github-metrics --region $AWS_REGION"
 echo -e "2. Build and push Docker image"

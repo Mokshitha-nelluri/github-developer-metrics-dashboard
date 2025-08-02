@@ -158,7 +158,7 @@ class OAuthCallbackHandler(http.server.SimpleHTTPRequestHandler):
         </head>
         <body>
             <div class="container">
-                <h2 class="error">❌ Authentication Failed</h2>
+                <h2 class="error">Authentication Failed</h2>
                 <p>{message}</p>
                 <a href="{back_url}" class="retry-btn">← Back to Dashboard</a>
             </div>

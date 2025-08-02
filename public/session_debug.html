@@ -10,31 +10,31 @@
     </style>
 </head>
 <body>
-    <h1>🔍 Session Debug Tool</h1>
+    <h1>Session Debug Tool</h1>
     
     <div class="section">
         <h2>🧹 Clear Everything</h2>
-        <button class="clear-btn" onclick="clearEverything()">🗑️ Nuclear Clear All Sessions</button>
-        <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Page</button>
+        <button class="clear-btn" onclick="clearEverything()">Nuclear Clear All Sessions</button>
+        <button class="refresh-btn" onclick="location.reload()">Refresh Page</button>
     </div>
     
     <div class="section">
-        <h2>📱 LocalStorage Contents</h2>
+        <h2>LocalStorage Contents</h2>
         <pre id="localStorage-content"></pre>
     </div>
     
     <div class="section">
-        <h2>🗂️ SessionStorage Contents</h2>
+        <h2>SessionStorage Contents</h2>
         <pre id="sessionStorage-content"></pre>
     </div>
     
     <div class="section">
-        <h2>🍪 Cookies</h2>
+        <h2>Cookies</h2>
         <pre id="cookies-content"></pre>
     </div>
     
     <div class="section">
-        <h2>🔐 Supabase Session Status</h2>
+        <h2>Supabase Session Status</h2>
         <pre id="supabase-status">Loading...</pre>
     </div>
     
@@ -125,11 +125,11 @@
             
             // Sign out from Supabase
             supabase.auth.signOut({ scope: 'global' }).then(() => {
-                console.log('✅ Supabase signed out');
+                console.log('SUCCESS: Supabase signed out');
                 displayStorageContents();
                 checkSupabaseStatus();
             }).catch(e => {
-                console.error('❌ Supabase signout error:', e);
+                console.error('ERROR: Supabase signout error:', e);
                 displayStorageContents();
                 checkSupabaseStatus();
             });

@@ -588,7 +588,7 @@ class MetricsRefreshManager:
             elif continuously_learning > 0:
                 summary["message"] = f"🧠 {continuously_learning}/{active_models} models support continuous learning"
             else:
-                summary["message"] = "⚠️ No models currently support continuous learning"
+                summary["message"] = "WARNING: No models currently support continuous learning"
             
             return summary
             

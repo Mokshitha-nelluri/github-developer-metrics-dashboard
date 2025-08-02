@@ -71,7 +71,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>🔄 Fresh Account Login</h2>
+    <h2>Fresh Account Login</h2>
     <p>Sign in with a different GitHub account</p>
     
     <button id="login-btn" class="login-btn">
@@ -123,7 +123,7 @@
           });
         }
         
-        console.log('✅ FRESH AUTH: All storage cleared');
+        console.log('SUCCESS: FRESH AUTH: All storage cleared');
       } catch (e) {
         console.log('Storage clear error (expected):', e);
       }
@@ -141,15 +141,15 @@
           storageKey: `fresh-auth-${Date.now()}-${Math.random()}`,
           storage: {
             getItem: (key) => {
-              console.log(`🚫 FRESH STORAGE: getItem(${key}) -> null`);
+              console.log(`BLOCKED: FRESH STORAGE: getItem(${key}) -> null`);
               return null; // Never return existing data
             },
             setItem: (key, value) => {
-              console.log(`🚫 FRESH STORAGE: setItem(${key}) -> ignored`);
+              console.log(`BLOCKED: FRESH STORAGE: setItem(${key}) -> ignored`);
               // Don't persist anything
             },
             removeItem: (key) => {
-              console.log(`🚫 FRESH STORAGE: removeItem(${key}) -> ignored`);
+              console.log(`BLOCKED: FRESH STORAGE: removeItem(${key}) -> ignored`);
               // Nothing to remove
             }
           }
@@ -180,7 +180,7 @@
             console.log('Signout error (expected):', e);
           }
           
-          showStatus('🚀 Starting GitHub OAuth flow...', 'info');
+          showStatus('Starting GitHub OAuth flow...', 'info');
           
           // Start OAuth with maximum fresh parameters
           const { data, error } = await freshSupabase.auth.signInWithOAuth({
@@ -202,7 +202,7 @@
             throw error;
           }
           
-          showStatus('✅ Redirecting to GitHub...', 'success');
+          showStatus('SUCCESS: Redirecting to GitHub...', 'success');
           
         } catch (error) {
           console.error('Fresh login error:', error);
@@ -221,7 +221,7 @@
       loginBtn.onclick = handleFreshLogin;
       
       showStatus('🆕 Ready for fresh authentication', 'success');
-      console.log('✅ FRESH AUTH: Ready for completely fresh login');
+      console.log('SUCCESS: FRESH AUTH: Ready for completely fresh login');
     }
     
     // Initialize when DOM is ready
