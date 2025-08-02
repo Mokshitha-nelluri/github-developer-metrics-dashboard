@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sign in with GitHub</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .login-btn {
+      background: #24292e;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .login-btn:hover {
+      background: #444d56;
+    }
+    .secondary-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .secondary-btn:hover {
+      background: #5a6268;
+    }
+    .danger-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .danger-btn:hover {
+      background: #c82333;
+    }
+    .status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .current-user {
+      background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .account-options {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔐 GitHub Metrics Dashboard</h2>
+    
+    <!-- New user login (shown when no session exists) -->
+    <div id="new-login-section">
+      <p>Sign in with your GitHub account to view your personalized metrics</p>
+      
+      <button id="login-btn" class="login-btn">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        Sign in with GitHub
+      </button>
+      
+      <button id="test-connection" class="secondary-btn">Test Connection</button>
+    </div>
+
+    <!-- Existing user section (shown when session exists) -->
+    <div id="existing-user-section" class="hidden">
+      <div class="current-user">
+        <h3>👋 Welcome back</h3>
+        <p id="current-user-email">Loading...</p>
+        <p style="font-size: 14px; color: #666;">You have an active session</p>
+      </div>
+      
+      <button id="continue-btn" class="login-btn">
+        🚀 Continue to Dashboard
+      </button>
+      
+      <div class="account-options">
+        <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Want to use a different account?</p>
+        <button id="switch-account-btn" class="secondary-btn">
+          🔄 Sign in with Different Account
+        </button>
+        <button id="sign-out-btn" class="danger-btn">
+          🚪 Sign Out Completely
+        </button>
+      </div>
+    </div>
+    
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    // Wrap everything in an async initialization function
+    async function initializeAuth() {
+      // Get Supabase config from URL params or environment
+      const urlParams = new URLSearchParams(window.location.search);
+      const supabaseUrl = urlParams.get('supabase_url') || 'https://vlqpjibikxahckqvpdyc.supabase.co';
+      const supabaseKey = urlParams.get('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscXBqaWJpa3hhaGNrcXZwZHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NzYxNzAsImV4cCI6MjA2OTA1MjE3MH0.LPezRjCbvIgmbhERtRLBo1QZrz-Kn8n3SUhUzpZKT7Q';
+      
+      // Check if user wants to force new login
+      const forceNewLogin = urlParams.get('force_new_login') === 'true';
+      const justSignedOut = urlParams.get('signed_out') === 'true';
+      const switchAccount = urlParams.get('switch_account') === 'true';
+      const forceClean = urlParams.get('force_clean') === 'true';
+      const freshAuth = urlParams.get('fresh_auth') === 'true'; // New parameter from fresh_auth.html
+      
+      // If user just signed out or force clean is requested, clear everything immediately
+      if (justSignedOut || forceClean || switchAccount || freshAuth) {
+        console.log('🧹 NUCLEAR OPTION: Force cleaning ALL session data before Supabase initialization...');
+        
+        // Clear all storage immediately and aggressively
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          // Clear all possible cookie variations
+          const cookiesToClear = [
+            'supabase-auth-token',
+            'sb-vlqpjibikxahckqvpdyc-auth-token',
+            'supabase.auth.token',
+            'github-oauth-state',
+            'oauth-state'
+          ];
+          
+          cookiesToClear.forEach(name => {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost;`;
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.localhost;`;
+          });
+          
+          // Clear all cookies more aggressively
+          document.cookie.split(";").forEach(function(c) { 
+            const cookie = c.replace(/^ +/, "").replace(/=.*/, "");
+            document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+            document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=localhost`;
+            document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.localhost`;
+          });
+          
+          // Clear IndexedDB if it exists
+          if (window.indexedDB) {
+            try {
+              window.indexedDB.deleteDatabase('supabase-auth');
+            } catch (e) {
+              console.log('IndexedDB clear error (expected):', e);
+            }
+          }
+          
+        } catch (e) {
+          console.log('Error clearing storage:', e);
+        }
+        
+        // Force a small delay to ensure clearing is complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          autoRefreshToken: !justSignedOut && !forceClean && !switchAccount && !freshAuth, // Disable if switching/signed out
+          persistSession: !justSignedOut && !forceClean && !switchAccount && !freshAuth,   // Disable if switching/signed out
+          detectSessionInUrl: !justSignedOut && !forceClean && !switchAccount && !freshAuth, // Disable if switching/signed out
+          flowType: 'pkce',
+          storageKey: (switchAccount || freshAuth) ? `temp-auth-${Date.now()}` : 'supabase.auth.token', // Use temporary key when switching
+          storage: (switchAccount || justSignedOut || forceClean || freshAuth) ? {
+            // Custom storage that completely ignores any existing data when switching accounts
+            getItem: (key) => {
+              console.log(`🚫 Storage.getItem(${key}) -> null (switch account mode)`);
+              return null; // Always return null to ignore existing sessions
+            },
+            setItem: (key, value) => {
+              console.log(`🚫 Storage.setItem(${key}) -> ignored (switch account mode)`);
+              // Don't persist anything
+            },
+            removeItem: (key) => {
+              console.log(`🚫 Storage.removeItem(${key}) -> ignored (switch account mode)`);
+              // Don't need to remove anything
+            }
+          } : undefined
+        }
+      });    // DOM elements
+    const loginBtn = document.getElementById('login-btn');
+    const testBtn = document.getElementById('test-connection');
+    const statusDiv = document.getElementById('status');
+    const newLoginSection = document.getElementById('new-login-section');
+    const existingUserSection = document.getElementById('existing-user-section');
+    const currentUserEmail = document.getElementById('current-user-email');
+    const continueBtn = document.getElementById('continue-btn');
+    const switchAccountBtn = document.getElementById('switch-account-btn');
+    const signOutBtn = document.getElementById('sign-out-btn');
+    
+    let isNewLogin = false; // Track if this is a fresh login or existing session
+    let currentSession = null;
+    
+    function showStatus(message, type = 'success') {
+      statusDiv.textContent = message;
+      statusDiv.className = `status ${type}`;
+      statusDiv.style.display = 'block';
+    }
+    
+    function hideStatus() {
+      statusDiv.style.display = 'none';
+    }
+    
+    function showNewLoginUI() {
+      newLoginSection.classList.remove('hidden');
+      existingUserSection.classList.add('hidden');
+      hideStatus();
+    }
+    
+    function showExistingUserUI(session) {
+      newLoginSection.classList.add('hidden');
+      existingUserSection.classList.remove('hidden');
+      
+      // Display user email
+      currentUserEmail.textContent = session.user.email;
+      
+      // Calculate and display session info
+      const sessionExpiry = new Date(session.expires_at * 1000);
+      const now = new Date();
+      const timeLeft = Math.max(0, sessionExpiry.getTime() - now.getTime());
+      const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      
+      // Show session duration info
+      const sessionInfo = document.createElement('div');
+      sessionInfo.style.cssText = `
+        margin-top: 8px; 
+        padding: 8px; 
+        background: #f0f8ff; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        color: #666;
+      `;
+      
+      if (timeLeft > 0) {
+        sessionInfo.innerHTML = `
+          <div>🕐 Session expires in: ${hoursLeft}h ${minutesLeft}m</div>
+          <div>📅 Session valid until: ${sessionExpiry.toLocaleString()}</div>
+          <div>🔄 Sessions typically last 1 hour and auto-refresh</div>
+        `;
+      } else {
+        sessionInfo.innerHTML = `
+          <div>⚠️ Session has expired</div>
+          <div>🔄 Please sign in again</div>
+        `;
+      }
+      
+      // Remove any existing session info and add new one
+      const existingInfo = existingUserSection.querySelector('.session-info');
+      if (existingInfo) {
+        existingInfo.remove();
+      }
+      
+      sessionInfo.className = 'session-info';
+      currentUserEmail.parentNode.insertBefore(sessionInfo, currentUserEmail.nextSibling);
+      
+      hideStatus();
+    }
+    
+    function redirectToStreamlit(session) {
+      const streamlitUrl = new URL('http://localhost:8501');
+      streamlitUrl.searchParams.set('session_token', session.access_token);
+      
+      // Handle GitHub token
+      let githubToken = '';
+      if (session.provider_token) {
+        githubToken = session.provider_token;
+      } else if (session.user && session.user.app_metadata && session.user.app_metadata.provider_token) {
+        githubToken = session.user.app_metadata.provider_token;
+      } else if (session.user && session.user.user_metadata && session.user.user_metadata.provider_token) {
+        githubToken = session.user.user_metadata.provider_token;
+      }
+      
+      streamlitUrl.searchParams.set('github_token', githubToken);
+      streamlitUrl.searchParams.set('user_email', session.user.email);
+      
+      console.log('Redirecting to Streamlit:', streamlitUrl.toString());
+      window.location.href = streamlitUrl.toString();
+    }
+
+    // Test connection function
+    async function testConnection() {
+      try {
+        showStatus('Testing Supabase connection...', 'info');
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          showStatus(`Connection test failed: ${error.message}`, 'error');
+        } else {
+          showStatus('Supabase connection successful!', 'success');
+        }
+      } catch (err) {
+        showStatus(`Connection test error: ${err.message}`, 'error');
+      }
+    }
+
+    // Handle new login
+    async function handleNewLogin() {
+      try {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing in...';
+        
+        // Mark this as a new login attempt
+        isNewLogin = true;
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: `${window.location.origin}/public/auth_enhanced.html?timestamp=${Date.now()}`,
+            scopes: 'repo read:user user:email',
+            queryParams: {
+              timestamp: Date.now()  // Make each request unique
+            }
+          }
+        });
+        
+        if (error) throw error;
+        
+        showStatus('Redirecting to GitHub...', 'success');
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        showStatus(`Login failed: ${error.message}`, 'error');
+        isNewLogin = false; // Reset flag on error
+        
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = `
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          Sign in with GitHub
+        `;
+      }
+    }
+
+    // Handle sign out
+    async function handleSignOut() {
+      try {
+        signOutBtn.disabled = true;
+        signOutBtn.textContent = 'Signing out...';
+        
+        showStatus('Signing out completely...', 'info');
+        
+        // Step 1: Sign out from Supabase with global scope
+        console.log('Step 1: Signing out from Supabase...');
+        try {
+          const { error } = await supabase.auth.signOut({ scope: 'global' });
+          if (error) {
+            console.error('Supabase signout error:', error);
+          }
+        } catch (e) {
+          console.error('Supabase signout exception:', e);
+        }
+        
+        // Step 2: Clear ALL storage - localStorage, sessionStorage, and cookies
+        console.log('Step 2: Clearing all browser storage...');
+        
+        // Clear all localStorage
+        localStorage.clear();
+        
+        // Clear all sessionStorage
+        sessionStorage.clear();
+        
+        // Clear specific Supabase and auth-related keys that might persist
+        const authKeys = [
+          'supabase.auth.token',
+          'sb-vlqpjibikxahckqvpdyc-auth-token',
+          'supabase_session',
+          'github_session',
+          'auth_token',
+          'access_token',
+          'session_token',
+          'refresh_token',
+          'oauth_token',
+          'github_oauth_token'
+        ];
+        
+        authKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            console.log(`Could not remove ${key}:`, e);
+          }
+        });
+        
+        // Step 3: Clear browser cookies (especially OAuth-related ones)
+        console.log('Step 3: Clearing cookies...');
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Step 4: Reset all state variables
+        console.log('Step 4: Resetting application state...');
+        currentSession = null;
+        isNewLogin = false;
+        
+        // Step 5: Create a new Supabase client with disabled session persistence
+        console.log('Step 5: Reinitializing Supabase client...');
+        const cleanSupabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+            flowType: 'pkce'
+          }
+        });
+        
+        // Replace the global supabase reference temporarily
+        window.tempSupabase = cleanSupabase;
+        
+        showStatus('✅ Signed out completely! Redirecting...', 'success');
+        
+        // Step 6: Force redirect to clean URL with signed_out parameter
+        console.log('Step 6: Redirecting to clean authentication page...');
+        const cleanUrl = new URL(window.location.origin + window.location.pathname);
+        cleanUrl.searchParams.set('signed_out', 'true');
+        cleanUrl.searchParams.set('force_clean', 'true');
+        cleanUrl.searchParams.set('timestamp', Date.now().toString());
+        
+        setTimeout(() => {
+          window.location.replace(cleanUrl.toString()); // Use replace to avoid back-button issues
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Sign out error:', error);
+        showStatus(`Sign out failed: ${error.message}`, 'error');
+        signOutBtn.disabled = false;
+        signOutBtn.textContent = '🚪 Sign Out Completely';
+      }
+    }
+
+    // Handle switch account - NUCLEAR OPTION
+    async function handleSwitchAccount() {
+      try {
+        switchAccountBtn.disabled = true;
+        switchAccountBtn.textContent = 'Switching...';
+        
+        showStatus('🧹 NUCLEAR CLEAR: Wiping all session data...', 'info');
+        
+        // STEP 1: Clear everything possible
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear all cookies with extreme prejudice
+        document.cookie.split(";").forEach(function(c) { 
+          const cookie = c.replace(/^ +/, "").replace(/=.*/, "");
+          document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+          document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=localhost`;
+          document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.localhost`;
+          document.cookie = `${cookie}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${window.location.hostname}`;
+        });
+        
+        // STEP 2: Force Supabase logout
+        try {
+          await supabase.auth.signOut({ scope: 'global' });
+        } catch (e) {
+          console.log('Supabase logout error (expected):', e);
+        }
+        
+        // STEP 3: Clear IndexedDB
+        if (window.indexedDB) {
+          try {
+            window.indexedDB.deleteDatabase('supabase-auth');
+            window.indexedDB.deleteDatabase('supabase');
+          } catch (e) {
+            console.log('IndexedDB clear error (expected):', e);
+          }
+        }
+        
+        showStatus('🔄 Force reloading page with fresh cache...', 'info');
+        
+        // STEP 4: Nuclear option - force reload with cache clearing and switch parameters
+        setTimeout(() => {
+          const switchUrl = new URL(window.location.href);
+          switchUrl.searchParams.set('switch_account', 'true');
+          switchUrl.searchParams.set('force_clean', 'true'); 
+          switchUrl.searchParams.set('signed_out', 'true');
+          switchUrl.searchParams.set('timestamp', Date.now().toString());
+          switchUrl.searchParams.set('cache_bust', Math.random().toString(36));
+          
+          // Force reload with no cache
+          window.location.replace(switchUrl.toString());
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Switch account error:', error);
+        showStatus(`Failed to switch account: ${error.message}`, 'error');
+        switchAccountBtn.disabled = false;
+        switchAccountBtn.textContent = '🔄 Sign in with Different Account';
+      }
+    }
+
+    // Event listeners
+    testBtn.onclick = testConnection;
+    loginBtn.onclick = handleNewLogin;
+    continueBtn.onclick = () => redirectToStreamlit(currentSession);
+    switchAccountBtn.onclick = handleSwitchAccount;
+    signOutBtn.onclick = handleSignOut;
+
+    // Handle OAuth callback
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event, session ? {
+        email: session.user?.email,
+        created_at: session.created_at,
+        expires_at: new Date(session.expires_at * 1000).toLocaleString(),
+        isNewLogin: isNewLogin
+      } : 'No session');
+      
+      if (event === 'SIGNED_IN' && session) {
+        currentSession = session;
+        
+        // Store session info for Streamlit
+        const sessionData = {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          user: session.user,
+          provider_token: session.provider_token,
+          expires_at: session.expires_at
+        };
+        
+        localStorage.setItem('supabase_session', JSON.stringify(sessionData));
+        
+        // Only auto-redirect for fresh OAuth logins, not existing session detection
+        if (isNewLogin) {
+          console.log('✅ Fresh login detected, redirecting to dashboard...');
+          isNewLogin = false; // Reset the flag
+          
+          showStatus('✅ Login successful! Redirecting...', 'success');
+          
+          // Auto-redirect after successful login
+          setTimeout(() => {
+            redirectToStreamlit(session);
+          }, 1500);
+        } else {
+          // Existing session detected - show user choice UI instead of auto-redirecting
+          console.log('ℹ️ Existing session detected, showing user choices');
+          showExistingUserUI(session);
+        }
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('🚪 User signed out');
+        localStorage.removeItem('supabase_session');
+        currentSession = null;
+        isNewLogin = false; // Reset flag
+        showNewLoginUI();
+      }
+    });
+
+    // Check for existing session on page load
+    // IMPORTANT: Check for clearing flags BEFORE getting session
+    if (justSignedOut || switchAccount || forceNewLogin || forceClean || freshAuth) {
+      console.log('🚫 BYPASS SESSION CHECK - User requested fresh login via:', {
+        justSignedOut, switchAccount, forceNewLogin, forceClean, freshAuth
+      });
+      
+      // Don't even check for existing sessions - go straight to fresh login
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (e) {
+        console.log('Signout error (expected):', e);
+      }
+      
+      currentSession = null;
+      isNewLogin = false;
+      showNewLoginUI();
+      showStatus('🆕 Ready for fresh account login', 'success');
+      return; // Exit early - don't check for existing sessions
+    }
+    
+    // Only check for existing sessions if user is NOT trying to switch/logout
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      console.log('🔍 Session check (normal flow)...');
+      console.log('Session exists:', !!session);
+      console.log('Error:', error);
+      
+      // If user just signed out OR switching accounts, ALWAYS clear everything and ignore any existing session
+      if (justSignedOut || switchAccount || forceNewLogin) {
+        console.log('🚪 User wants fresh login, force clearing all sessions');
+        
+        // Force sign out again to ensure complete cleanup
+        try {
+          await supabase.auth.signOut({ scope: 'global' });
+        } catch (e) {
+          console.log('Signout error (expected):', e);
+        }
+        
+        // Clear all storage completely
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear specific auth-related keys that might persist across domains
+        const allKeys = [
+          'supabase.auth.token',
+          'sb-vlqpjibikxahckqvpdyc-auth-token',
+          'supabase_session',
+          'github_session',
+          'auth_token',
+          'access_token',
+          'session_token'
+        ];
+        
+        allKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            // Ignore errors
+          }
+        });
+        
+        // Reset all state
+        currentSession = null;
+        isNewLogin = false;
+        
+        showNewLoginUI();
+        
+        if (switchAccount) {
+          showStatus('✅ Account switched! Please sign in with your preferred account.', 'success');
+        } else {
+          showStatus('✅ Successfully signed out! All sessions cleared.', 'success');
+        }
+        return;
+      }
+      
+      if (session) {
+        console.log('Session details:', {
+          email: session.user?.email,
+          created_at: session.created_at,
+          expires_at: new Date(session.expires_at * 1000).toLocaleString(),
+          access_token: session.access_token?.substring(0, 20) + '...'
+        });
+      }
+      
+      // Check localStorage for any persisting data
+      console.log('LocalStorage items:');
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('auth') || key.includes('session'))) {
+          console.log(`  ${key}: ${localStorage.getItem(key)?.substring(0, 50)}...`);
+        }
+      }
+      
+      if (error) {
+        console.error('Session error:', error);
+        showNewLoginUI();
+        return;
+      }
+      
+      // Check if we're returning from OAuth (has code parameter)
+      const hasOAuthCode = urlParams.get('code');
+      
+      if (hasOAuthCode) {
+        // We're returning from OAuth - this should be treated as a fresh login
+        console.log('OAuth callback detected with code:', hasOAuthCode);
+        isNewLogin = true;
+        // Let onAuthStateChange handle the session
+        return;
+      }
+      
+      // AGGRESSIVE CLEARING: If switching accounts, signed out, or force new login - IGNORE any existing session
+      if ((switchAccount || justSignedOut || forceNewLogin || forceClean) && session && !hasOAuthCode) {
+        console.log('🚫 IGNORING EXISTING SESSION - User requested fresh login via:', {
+          switchAccount, justSignedOut, forceNewLogin, forceClean
+        });
+        
+        try {
+          // Force sign out with maximum scope
+          await supabase.auth.signOut({ scope: 'global' });
+          
+          // Create a completely new Supabase client to avoid any cached state
+          const freshSupabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false,
+              detectSessionInUrl: false,
+              flowType: 'pkce',
+              storageKey: `temp-fresh-${Date.now()}`, // Completely different storage key
+              storage: {
+                getItem: () => null,
+                setItem: () => {},
+                removeItem: () => {}
+              }
+            }
+          });
+          
+          // Replace the global supabase reference
+          window.supabase = freshSupabase;
+          
+          // Clear everything again
+          localStorage.clear();
+          sessionStorage.clear();
+          
+          currentSession = null;
+          isNewLogin = false;
+          showNewLoginUI();
+          showStatus('🆕 Ready for fresh account login', 'success');
+          return;
+        } catch (e) {
+          console.error('Error during forced logout:', e);
+        }
+      }
+      
+      if (session) {
+        console.log('Existing session found:', session.user.email);
+        console.log('Session created:', new Date(session.created_at || 0).toLocaleString());
+        console.log('Session expires:', new Date(session.expires_at * 1000).toLocaleString());
+        
+        currentSession = session;
+        
+        // Only show existing user UI if this is not an OAuth callback
+        if (!hasOAuthCode) {
+          showExistingUserUI(session);
+        }
+      } else {
+        console.log('No existing session found');
+        showNewLoginUI();
+      }
+    });
+    
+    } // End of initializeAuth function
+    
+    // Call the initialization function when DOM is loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeAuth);
+    } else {
+      initializeAuth();
+    }
+  </script>
+</body>
+</html>

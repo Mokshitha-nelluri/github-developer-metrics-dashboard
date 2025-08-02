@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Session Debug Tool</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        .clear-btn { background: red; color: white; padding: 10px; border: none; cursor: pointer; }
+        .refresh-btn { background: blue; color: white; padding: 10px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Session Debug Tool</h1>
+    
+    <div class="section">
+        <h2>🧹 Clear Everything</h2>
+        <button class="clear-btn" onclick="clearEverything()">🗑️ Nuclear Clear All Sessions</button>
+        <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Page</button>
+    </div>
+    
+    <div class="section">
+        <h2>📱 LocalStorage Contents</h2>
+        <pre id="localStorage-content"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>🗂️ SessionStorage Contents</h2>
+        <pre id="sessionStorage-content"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>🍪 Cookies</h2>
+        <pre id="cookies-content"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>🔐 Supabase Session Status</h2>
+        <pre id="supabase-status">Loading...</pre>
+    </div>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://vlqpjibikxahckqvpdyc.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscXBqaWJpa3hhaGNrcXZwZHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NzYxNzAsImV4cCI6MjA2OTA1MjE3MH0.LPezRjCbvIgmbhERtRLBo1QZrz-Kn8n3SUhUzpZKT7Q';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true,
+                flowType: 'pkce'
+            }
+        });
+        
+        function displayStorageContents() {
+            // LocalStorage
+            const localStorageDiv = document.getElementById('localStorage-content');
+            let localContent = '';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                localContent += `${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}\\n`;
+            }
+            localStorageDiv.textContent = localContent || 'Empty';
+            
+            // SessionStorage
+            const sessionStorageDiv = document.getElementById('sessionStorage-content');
+            let sessionContent = '';
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                sessionContent += `${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}\\n`;
+            }
+            sessionStorageDiv.textContent = sessionContent || 'Empty';
+            
+            // Cookies
+            const cookiesDiv = document.getElementById('cookies-content');
+            cookiesDiv.textContent = document.cookie || 'No cookies';
+        }
+        
+        async function checkSupabaseStatus() {
+            const statusDiv = document.getElementById('supabase-status');
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    statusDiv.textContent = `Error: ${error.message}`;
+                } else if (session) {
+                    statusDiv.textContent = `Session Active:\\nUser: ${session.user.email}\\nCreated: ${session.created_at}\\nExpires: ${new Date(session.expires_at * 1000).toLocaleString()}\\nAccess Token: ${session.access_token.substring(0, 30)}...`;
+                } else {
+                    statusDiv.textContent = 'No active session';
+                }
+            } catch (e) {
+                statusDiv.textContent = `Exception: ${e.message}`;
+            }
+        }
+        
+        function clearEverything() {
+            console.log('🧹 Nuclear clearing all sessions...');
+            
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Clear specific Supabase keys
+            const possibleKeys = [
+                'supabase.auth.token',
+                'sb-vlqpjibikxahckqvpdyc-auth-token',
+                'supabase_session',
+                'github_session',
+                'supabase.auth.local_storage_key'
+            ];
+            
+            possibleKeys.forEach(key => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+            
+            // Sign out from Supabase
+            supabase.auth.signOut({ scope: 'global' }).then(() => {
+                console.log('✅ Supabase signed out');
+                displayStorageContents();
+                checkSupabaseStatus();
+            }).catch(e => {
+                console.error('❌ Supabase signout error:', e);
+                displayStorageContents();
+                checkSupabaseStatus();
+            });
+        }
+        
+        // Initial load
+        displayStorageContents();
+        checkSupabaseStatus();
+        
+        // Refresh every 2 seconds
+        setInterval(() => {
+            displayStorageContents();
+            checkSupabaseStatus();
+        }, 2000);
+    </script>
+</body>
+</html>

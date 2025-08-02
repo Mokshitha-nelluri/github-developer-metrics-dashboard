@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🧹 Session Reset Tool</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .nuclear-btn { 
+            background: #ff4444; 
+            color: white; 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            margin: 10px 5px;
+        }
+        .test-btn { 
+            background: #4444ff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 5px; 
+            overflow-x: auto; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Session Reset Tool</h1>
+        <p>Use this tool to completely clear all authentication sessions when stuck in a login loop.</p>
+        
+        <div id="status"></div>
+        
+        <div style="margin: 20px 0;">
+            <button class="nuclear-btn" onclick="nuclearReset()">
+                🗑️ NUCLEAR RESET - Clear Everything
+            </button>
+            <button class="test-btn" onclick="checkStatus()">🔍 Check Current Status</button>
+            <button class="test-btn" onclick="testAuth()">🔐 Test Auth Page</button>
+        </div>
+        
+        <h3>📊 Current Session Status</h3>
+        <pre id="session-status">Click "Check Current Status" to see...</pre>
+        
+        <h3>📱 Storage Contents</h3>
+        <pre id="storage-contents">Click "Check Current Status" to see...</pre>
+        
+        <h3>🔗 Quick Links</h3>
+        <p>
+            <a href="./auth_enhanced.html" target="_blank">🚀 Enhanced Auth Page</a> |
+            <a href="./session_debug.html" target="_blank">🐛 Debug Tool</a> |
+            <a href="http://localhost:8501" target="_blank">📊 Dashboard</a>
+        </p>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://vlqpjibikxahckqvpdyc.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscXBqaWJpa3hhaGNrcXZwZHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NzYxNzAsImV4cCI6MjA2OTA1MjE3MH0.LPezRjCbvIgmbhERtRLBo1QZrz-Kn8n3SUhUzpZKT7Q';
+        
+        let supabase;
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function nuclearReset() {
+            showStatus('🧹 Starting nuclear reset...', 'info');
+            
+            try {
+                // Create fresh Supabase client
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Step 1: Sign out from Supabase
+                showStatus('1/5 Signing out from Supabase...', 'info');
+                await supabase.auth.signOut({ scope: 'global' });
+                
+                // Step 2: Clear all localStorage
+                showStatus('2/5 Clearing localStorage...', 'info');
+                localStorage.clear();
+                
+                // Step 3: Clear all sessionStorage
+                showStatus('3/5 Clearing sessionStorage...', 'info');
+                sessionStorage.clear();
+                
+                // Step 4: Clear cookies
+                showStatus('4/5 Clearing cookies...', 'info');
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Step 5: Clear specific keys
+                showStatus('5/5 Clearing specific Supabase keys...', 'info');
+                const keys = [
+                    'supabase.auth.token',
+                    'sb-vlqpjibikxahckqvpdyc-auth-token',
+                    'supabase_session',
+                    'github_session',
+                    'supabase.auth.local_storage_key'
+                ];
+                
+                keys.forEach(key => {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                });
+                
+                showStatus('✅ Nuclear reset complete! All sessions cleared.', 'success');
+                
+                // Auto-check status after reset
+                setTimeout(checkStatus, 1000);
+                
+            } catch (error) {
+                showStatus(`❌ Reset failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkStatus() {
+            try {
+                // Create fresh client to check status
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                const statusDiv = document.getElementById('session-status');
+                const storageDiv = document.getElementById('storage-contents');
+                
+                // Session status
+                if (error) {
+                    statusDiv.textContent = `Error: ${error.message}`;
+                } else if (session) {
+                    statusDiv.textContent = `🔓 ACTIVE SESSION FOUND!
+User: ${session.user.email}
+Created: ${session.created_at}
+Expires: ${new Date(session.expires_at * 1000).toLocaleString()}
+Token: ${session.access_token.substring(0, 30)}...
+
+❌ This means the reset didn't work completely.`;
+                } else {
+                    statusDiv.textContent = `✅ NO SESSION FOUND
+This is good! No active sessions detected.`;
+                }
+                
+                // Storage contents
+                let storageContent = '=== localStorage ===\\n';
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    storageContent += `${key}: ${value?.substring(0, 50)}${value?.length > 50 ? '...' : ''}\\n`;
+                }
+                
+                storageContent += '\\n=== sessionStorage ===\\n';
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    const value = sessionStorage.getItem(key);
+                    storageContent += `${key}: ${value?.substring(0, 50)}${value?.length > 50 ? '...' : ''}\\n`;
+                }
+                
+                storageContent += `\\n=== Cookies ===\\n${document.cookie || 'No cookies'}`;
+                
+                storageDiv.textContent = storageContent || 'All storage is empty ✅';
+                
+            } catch (error) {
+                document.getElementById('session-status').textContent = `Error checking status: ${error.message}`;
+            }
+        }
+        
+        function testAuth() {
+            // Open auth page with signed_out parameter
+            const authUrl = './auth_enhanced.html?signed_out=true&timestamp=' + Date.now();
+            window.open(authUrl, '_blank');
+        }
+        
+        // Initial status check
+        checkStatus();
+    </script>
+</body>
+</html>

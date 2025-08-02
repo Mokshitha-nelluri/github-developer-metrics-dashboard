@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sign in with GitHub</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .login-btn {
+      background: #24292e;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .login-btn:hover {
+      background: #444d56;
+    }
+    .status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔐 GitHub Metrics Dashboard</h2>
+    <p>Sign in with your GitHub account to view your personalized metrics</p>
+    
+    <button id="login-btn" class="login-btn">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      Login with GitHub
+    </button>
+    
+    <button id="logout-btn" class="login-btn" style="background-color: #dc3545; display: none; margin-top: 10px;">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 16a.5.5 0 0 0 .5-.5V8.5a.5.5 0 0 0-1 0V15H1.5a.5.5 0 0 0 0 1H8zm4-2.5V2.5A1.5 1.5 0 0 0 10.5 1h-5A1.5 1.5 0 0 0 4 2.5v2a.5.5 0 0 0 1 0v-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 5.5 15h5A1.5 1.5 0 0 0 12 13.5zm-5-5a.5.5 0 0 0 0 1h3.793l-1.147 1.146a.5.5 0 0 0 .708.708l2-2a.5.5 0 0 0 0-.708l-2-2a.5.5 0 0 0-.708.708L10.793 8.5H7z"/>
+      </svg>
+      Sign Out
+    </button>
+    
+    <button id="test-connection" style="background-color: #666; margin-top: 10px;">Test Supabase Connection</button>
+    
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    // Get Supabase config from URL params or environment
+    const urlParams = new URLSearchParams(window.location.search);
+    const supabaseUrl = urlParams.get('supabase_url') || 'https://vlqpjibikxahckqvpdyc.supabase.co';
+    const supabaseKey = urlParams.get('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZscXBqaWJpa3hhaGNrcXZwZHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NzYxNzAsImV4cCI6MjA2OTA1MjE3MH0.LPezRjCbvIgmbhERtRLBo1QZrz-Kn8n3SUhUzpZKT7Q';
+    
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const testBtn = document.getElementById('test-connection');
+    const statusDiv = document.getElementById('status');
+
+    // Check for logout parameter in URL
+    if (urlParams.get('logout') === 'true') {
+      showStatus('Signing out...', 'info');
+      performSignOut();
+    }
+    
+    // Test Supabase connection
+    console.log('Supabase client created with URL:', supabaseUrl);
+    console.log('Supabase key (first 20 chars):', supabaseKey.substring(0, 20) + '...');
+    
+    function showStatus(message, type = 'success') {
+      statusDiv.textContent = message;
+      statusDiv.className = `status ${type}`;
+      statusDiv.style.display = 'block';
+    }
+
+    // Test connection function
+    async function testConnection() {
+      try {
+        showStatus('Testing Supabase connection...', 'info');
+        console.log('Testing Supabase connection...');
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Supabase connection test failed:', error);
+          showStatus(`Connection test failed: ${error.message}`, 'error');
+        } else {
+          console.log('Supabase connection successful:', data);
+          showStatus('Supabase connection successful!', 'success');
+        }
+      } catch (err) {
+        console.error('Connection test error:', err);
+        showStatus(`Connection test error: ${err.message}`, 'error');
+      }
+    }
+    
+    // Handle test button click
+    testBtn.onclick = testConnection;
+    
+    // Handle logout button click
+    logoutBtn.onclick = async () => {
+      showStatus('Signing out...', 'info');
+      await performSignOut();
+    };
+
+    // Sign out function
+    async function performSignOut() {
+      try {
+        console.log('Performing sign out...');
+        
+        // Sign out from Supabase
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Sign out error:', error);
+          showStatus(`Sign out failed: ${error.message}`, 'error');
+          return;
+        }
+        
+        // Clear local storage
+        localStorage.removeItem('supabase_session');
+        localStorage.clear();
+        
+        // Clear session storage
+        sessionStorage.clear();
+        
+        console.log('Sign out successful');
+        showStatus('✅ Signed out successfully!', 'success');
+        
+        // Update UI
+        updateUIState(false);
+        
+        // Clear URL parameters
+        const newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+      } catch (error) {
+        console.error('Sign out error:', error);
+        showStatus(`Sign out failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Update UI state based on authentication status
+    function updateUIState(isLoggedIn) {
+      if (isLoggedIn) {
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+      } else {
+        loginBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+      }
+    }
+    
+    // Handle login button click
+    loginBtn.onclick = async () => {
+      try {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing in...';
+        
+        console.log('Attempting GitHub OAuth login...');
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: `${window.location.origin}/public/auth.html`,
+            scopes: 'repo read:user user:email'
+          }
+        });
+        
+        if (error) {
+          console.error('OAuth error:', error);
+          throw error;
+        }
+        
+        console.log('OAuth request initiated:', data);
+        showStatus('Redirecting to GitHub...', 'success');
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        showStatus(`Login failed: ${error.message}`, 'error');
+        
+        // Add more detailed error information
+        if (error.message.includes('401')) {
+          showStatus('Authentication error: Please check Supabase configuration', 'error');
+        } else if (error.message.includes('provider')) {
+          showStatus('GitHub provider not configured in Supabase', 'error');
+        }
+        
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = `
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          Login with GitHub
+        `;
+      }
+    };
+
+    // Handle OAuth callback
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session);
+      
+      if (event === 'SIGNED_IN' && session) {
+        console.log('Session details:', {
+          access_token: session.access_token ? 'present' : 'missing',
+          provider_token: session.provider_token ? 'present' : 'missing',
+          user_email: session.user?.email || 'missing'
+        });
+        
+        showStatus('✅ Login successful! Redirecting...', 'success');
+        
+        // Update UI state
+        updateUIState(true);
+        
+        // Store session info for Streamlit
+        const sessionData = {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          user: session.user,
+          provider_token: session.provider_token, // This is the GitHub token!
+          expires_at: session.expires_at
+        };
+        
+        localStorage.setItem('supabase_session', JSON.stringify(sessionData));
+        
+        // Redirect to Streamlit app with session data
+        setTimeout(() => {
+          const streamlitUrl = new URL('http://localhost:8501');
+          streamlitUrl.searchParams.set('session_token', session.access_token);
+          
+          // Handle GitHub token - check multiple possible locations
+          let githubToken = '';
+          if (session.provider_token) {
+            githubToken = session.provider_token;
+          } else if (session.user && session.user.app_metadata && session.user.app_metadata.provider_token) {
+            githubToken = session.user.app_metadata.provider_token;
+          } else if (session.user && session.user.user_metadata && session.user.user_metadata.provider_token) {
+            githubToken = session.user.user_metadata.provider_token;
+          }
+          
+          streamlitUrl.searchParams.set('github_token', githubToken);
+          streamlitUrl.searchParams.set('user_email', session.user.email);
+          
+          console.log('Full session object:', session);
+          console.log('Redirecting to:', streamlitUrl.toString());
+          console.log('Session data being passed:', {
+            session_token: session.access_token ? 'present' : 'missing',
+            github_token: githubToken ? 'present (' + githubToken.substring(0, 10) + '...)' : 'missing',
+            user_email: session.user.email || 'missing',
+            provider: session.user?.app_metadata?.provider || 'unknown'
+          });
+          
+          window.location.href = streamlitUrl.toString();
+        }, 1500);
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('supabase_session');
+        showStatus('✅ Signed out successfully!', 'success');
+        updateUIState(false);
+      }
+      
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed:', session);
+        if (session) {
+          const sessionData = {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            user: session.user,
+            provider_token: session.provider_token,
+            expires_at: session.expires_at
+          };
+          localStorage.setItem('supabase_session', JSON.stringify(sessionData));
+        }
+      }
+    });
+
+    // Check for existing session on page load
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error);
+        updateUIState(false);
+        return;
+      }
+      
+      if (session) {
+        showStatus('Already logged in! Redirecting...', 'success');
+        updateUIState(true);
+        console.log('Existing session found:', {
+          access_token: session.access_token ? 'present' : 'missing',
+          provider_token: session.provider_token ? 'present' : 'missing',
+          user_email: session.user?.email || 'missing'
+        });
+        setTimeout(() => {
+          const streamlitUrl = new URL('http://localhost:8501');
+          streamlitUrl.searchParams.set('session_token', session.access_token);
+          streamlitUrl.searchParams.set('github_token', session.provider_token || '');
+          streamlitUrl.searchParams.set('user_email', session.user.email);
+          console.log('Redirecting existing session to:', streamlitUrl.toString());
+          window.location.href = streamlitUrl.toString();
+        }, 1000);
+      } else {
+        updateUIState(false);
+      }
+    });
+  </script>
+</body>
+</html>
