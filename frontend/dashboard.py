@@ -625,6 +625,12 @@ def show_login():
         
         oauth_url = f"https://github.com/login/oauth/authorize?{'&'.join(oauth_params)}"
         
+        # Debug logging to see what OAuth redirect URI is being used
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"OAuth Redirect URI being used: {OAUTH_REDIRECT_URI}")
+        logger.info(f"Generated OAuth URL: {oauth_url}")
+        
         st.markdown(f"""
         <div style="text-align: center; margin: 2rem 0;">
             <a href="{oauth_url}" 

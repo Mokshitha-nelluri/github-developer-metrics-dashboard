@@ -1,6 +1,7 @@
 # GitHub Developer Metrics Dashboard
 
-**Live Application**: http://44.199.213.241:8501/
+**Live Application**: http://github-metrics-alb-1733851955.us-east-1.elb.amazonaws.com/
+
 
 A comprehensive, AI-powered GitHub analytics platform that transforms your development activity into actionable insights through advanced DORA metrics, machine learning predictions, and continuous performance analysis.
 

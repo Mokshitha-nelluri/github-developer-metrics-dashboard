@@ -50,7 +50,7 @@ def get_oauth_redirect_uri():
     """Get the OAuth redirect URI with stable configuration"""
     # Force ALB URL in AWS deployment to override any dynamic IP detection
     if IS_AWS_DEPLOYMENT:
-        return "http://github-metrics-alb-1733851955.us-east-1.elb.amazonaws.com/auth/callback"
+        return "http://github-metrics-alb-1733851955.us-east-1.elb.amazonaws.com"
     
     # Use environment variable first (most reliable for production)
     env_uri = os.getenv("OAUTH_REDIRECT_URI")

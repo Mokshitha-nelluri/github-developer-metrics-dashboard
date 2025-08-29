@@ -20,38 +20,21 @@ logger = logging.getLogger(__name__)
 class OAuthCallbackHandler(http.server.SimpleHTTPRequestHandler):
     """Handle OAuth callback requests"""
     
-    def get_current_ip(self):
-        """Get the current public IP address dynamically"""
-        try:
-            # In AWS deployment, try to get the public IP from instance metadata
+    def get_streamlit_redirect_url(self, code: str, state: str) -> str:
+        """Get stable Streamlit redirect URL for OAuth callback"""
+        # Use environment variable for production stability
+        base_url = os.getenv("STREAMLIT_BASE_URL")
+        
+        if not base_url:
+            # Use fixed production URL or localhost for development
             is_aws_deployment = os.getenv("AWS_DEPLOYMENT", "true").lower() == "true"
-            
             if is_aws_deployment:
-                try:
-                    # Try AWS EC2 instance metadata service first
-                    response = requests.get(
-                        "http://169.254.169.254/latest/meta-data/public-ipv4",
-                        timeout=2
-                    )
-                    if response.status_code == 200:
-                        return response.text.strip()
-                except:
-                    pass
-                
-                # Fallback to external IP detection service
-                try:
-                    response = requests.get("https://api.ipify.org", timeout=5)
-                    if response.status_code == 200:
-                        return response.text.strip()
-                except:
-                    pass
-            
-            # Development fallback
-            return "localhost"
-            
-        except Exception as e:
-            logger.warning(f"Could not determine IP address: {e}")
-            return "localhost"
+                # Use the fixed production URL - update this to match your actual domain/IP
+                base_url = os.getenv("AWS_STREAMLIT_URL", "http://44.199.213.241:8501")
+            else:
+                base_url = "http://localhost:8501"
+        
+        return f"{base_url}?code={code}&state={state}"
     
     def do_GET(self):
         """Handle GET requests for OAuth callback"""
@@ -77,22 +60,7 @@ class OAuthCallbackHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 
                 # Success! Create redirect URL to Streamlit with the code
-                # Dynamically determine the redirect URL
-                is_aws_deployment = os.getenv("AWS_DEPLOYMENT", "true").lower() == "true"
-                
-                if is_aws_deployment:
-                    # Get current IP dynamically
-                    current_ip = self.get_current_ip()
-                    if current_ip != "localhost":
-                        base_url = f"http://{current_ip}:8501"
-                    else:
-                        # Fallback to environment variable if dynamic detection fails
-                        base_url = os.getenv("STREAMLIT_BASE_URL", "http://localhost:8501")
-                else:
-                    # In development, use localhost
-                    base_url = "http://localhost:8501"
-                
-                streamlit_url = f"{base_url}?code={code}&state={state}"
+                streamlit_url = self.get_streamlit_redirect_url(code, state)
                 
                 # Send redirect response
                 self.send_response(302)
@@ -115,9 +83,12 @@ class OAuthCallbackHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
         
-        # Get the current IP for the back link
-        current_ip = self.get_current_ip()
-        back_url = f"http://{current_ip}:8501" if current_ip != "localhost" else "http://localhost:8501"
+        # Get the stable Streamlit URL for the back link
+        is_aws_deployment = os.getenv("AWS_DEPLOYMENT", "true").lower() == "true"
+        if is_aws_deployment:
+            back_url = os.getenv("AWS_STREAMLIT_URL", "http://44.199.213.241:8501")
+        else:
+            back_url = "http://localhost:8501"
         
         html_content = f"""
         <!DOCTYPE html>
