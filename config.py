@@ -45,38 +45,26 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "dummy_client_id")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "dummy_client_secret")
 
-# OAuth redirect URI for AWS mode
+# OAuth redirect URI - FIXED for stable GitHub OAuth registration
 def get_oauth_redirect_uri():
-    """Get the OAuth redirect URI dynamically based on environment"""
+    """Get the OAuth redirect URI with stable configuration"""
+    # Force ALB URL in AWS deployment to override any dynamic IP detection
     if IS_AWS_DEPLOYMENT:
-        # In AWS, try to get the current public IP
-        try:
-            import requests
-            # Try AWS EC2 instance metadata service first
-            try:
-                response = requests.get(
-                    "http://169.254.169.254/latest/meta-data/public-ipv4",
-                    timeout=2
-                )
-                if response.status_code == 200:
-                    public_ip = response.text.strip()
-                    return f"http://{public_ip}:5000/auth/callback"
-            except:
-                pass
-            
-            # Fallback to external IP detection service
-            try:
-                response = requests.get("https://api.ipify.org", timeout=5)
-                if response.status_code == 200:
-                    public_ip = response.text.strip()
-                    return f"http://{public_ip}:5000/auth/callback"
-            except:
-                pass
-        except ImportError:
-            pass
+        return "http://github-metrics-alb-1733851955.us-east-1.elb.amazonaws.com/auth/callback"
     
-    # Fallback to environment variable or localhost
-    return os.getenv("OAUTH_REDIRECT_URI", "http://localhost:5000/auth/callback")
+    # Use environment variable first (most reliable for production)
+    env_uri = os.getenv("OAUTH_REDIRECT_URI")
+    if env_uri:
+        return env_uri
+    
+    if IS_AWS_DEPLOYMENT:
+        # For AWS deployment, use a fixed domain or IP that's registered with GitHub
+        # This should match exactly what's registered in your GitHub OAuth app
+        aws_redirect_uri = os.getenv("AWS_OAUTH_REDIRECT_URI", "http://github-metrics-alb-1733851955.us-east-1.elb.amazonaws.com")
+        return aws_redirect_uri
+    
+    # Development fallback
+    return "http://localhost:5000/auth/callback"
 
 OAUTH_REDIRECT_URI = get_oauth_redirect_uri()
 
